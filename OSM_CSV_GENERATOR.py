@@ -1,6 +1,6 @@
 #DOF OSM to CSV converter, shape data updated. Ver2.
 
-filename = 'C:\Users\Donal\Downloads\dublin_sample.osm'
+filename = 'C:\Users\Donal\Downloads\dublin_ireland'
 #filename = 'C:\Users\Donal\Downloads\map_of_dublin_mini'
 filepath = r"C:\Users\Donal\Downloads\\"
 
@@ -102,11 +102,19 @@ def way_node_handler(element):
         way_nodes.append(way_node)
     return way_nodes
 
-############ Update functions to handle data cleaning:        
+############ Update functions to handle data cleaning:  
+      
 dublin_re = re.compile(r'Dublin ?[0-9]?[0-9W]?$')
-not_dublin = ['Celbridge','Lucan','Leixlip','Malahide','Bray','Portmarnock','Kilternan','Dunshaughlin','Donabate','Batterstown','Baldonnel']
-
-in_dublin = {'Dublin':['Killiney','Blackrock','Harristown','Swords','Stillorgan','Dún Laoghaire','Monkstown','Mount Merrion','Cornelscourt'],\
+#Towns/villages seperate from Dublin, some are within the county of Dublin so this
+#is somewhat subjective classififcation. It should be noted some of these towns are
+#not in the county of Dublin at all.
+not_dublin = ['Celbridge','Lucan','Leixlip','Malahide','Bray','Portmarnock',\
+    'Kilternan','Dunshaughlin','Donabate','Batterstown','Baldonnel']
+#Areas of Dublin are assigned, though not consistantly, using the Dublin area
+#code. Again assignment of areas on the outskirts of the city but within 
+#the county is subjective.
+in_dublin = {'Dublin':['Killiney','Blackrock','Harristown','Swords','Stillorgan',\
+    'Dún Laoghaire','Monkstown','Mount Merrion','Cornelscourt'],\
     'Dublin 15':['Ongar','Blanchardstown'], 'Dublin 18': ['Cabinteely'],\
     'Dublin 14': ['Rathfarnham','Churchtown'], 'Dublin 4':['Donnybrook'],\
     'Dublin 24':['Tallaght'],'Dublin 22': ['Clondalkin'],'Dublin 3': ['Clontarf'] }
@@ -122,14 +130,40 @@ def city_converter(value):
     else:
         for d in in_dublin:
             for address in in_dublin[d]:
-                if value == unicode(address, 'utf-8'):
+                if value == unicode(address, 'utf-8'): 
+				#Many unicode related frustrations before unicode converter was added due to non-equality of unicode and stings.
                     match = True
-                    return d              
-            if match == False:        
-                return 'Dublin'
+                    return d            				
+    if match == False:        
+        return 'Dublin'
 
-def streer_fixer(addr):
-    None
+########Street name fixer
+street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
+
+#Creating regular expressions to locate abreviations to street naming.
+avenue_re = re.compile(r'\bave?\.?\b', re.IGNORECASE)
+street_re = re.compile(r'\stre?\.?\b', re.IGNORECASE)
+road_re = re.compile(r'\rd\.?\b', re.IGNORECASE)
+
+expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square", "Lane", "Road", 
+            "Trail", "Parkway", "Commons"]
+
+# Updated to have regular expressions for finding street name mappings
+mapping = { street_re: "Street",
+            avenue_re: "Avenue",
+            road_re: "Road"
+            }
+            
+def street_converter(name, mapping):
+    m = street_type_re.search(name)
+    if m:
+        street_type = m.group()
+        #Look for street names not in regular convention and update based on re mapping
+        if street_type not in expected:
+            for reg_exp in mapping:
+                if reg_exp.search(name[name.find(street_type):]):
+                    name = name[:name.find(street_type)] + mapping[reg_exp]               
+    return name
 
 
 
