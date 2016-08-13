@@ -333,7 +333,7 @@ WHERE key = "highway" AND value IN ("residential", "service", "footway", "second
 From this a rough number for the amount of cycle friendly roads/streets/paths in Dublin can be calculated: 1376/53356 or 2.58 % of total ways.
 
 
-#### Further Ideas and Discussion
+## Further Ideas and Discussion
 
 ##### Crossing Dublin without passing a pub.
 
@@ -369,6 +369,19 @@ The percentage cycle-able ways caluclated above is a crude first attempt at meas
 * The metro area captured in the database used is much larger than central Dublin and includes large sections of the adjacent counties that would ot be considered either Dublin or urban areas.
 
 A refinment of this number would be useful to creating a metric by which to compare the cycle friendliness of different cities around the world. The first step would be to update the percentage cyclable ways to a percentage cyclable distances using the actual lenght of the ways tagged as having cycle paths.
+
+##### Updating streets and addresses with Irish counterparts.
+
+One deficiency in the Dublin OSM map data is the number of nodes and ways that lack a tag for the Irish language (Gaelge) name. This can be seen in the low value for the "ga" key on the tag key summary (12007) compared with the total number of "name" key's (34676). For node_tags key = "ga" did not even make the top ten tags keys but this would be expected as many nodes would have no Irish language equivalent, this is not the case for streets where every street in the Republic of Ireland has an offical translation.
+
+A solution to this problem would be to encourage the top contributors to the Dublin OSM map to include Irish language versions of streets and addresses where possible in the way/node tags and update the map manually with known translations. All streets in Dublin display the irish language version in italics above the english. This of course might work for future map updates but updating the existing data would occur very slowly.
+
+Fortunately a register of all placenames in Ireland and their translation to irish is organized and curated by the Department of Arts, Heritage and the Gealtacht (http://www.logainm.ie/en/). The website even includes a built in browser translator that can translate any list of street or placenames to its Irish equivalent. If the information in the database used for this website could be intergrated programatically into the OSM tag data, this would provide an updated Irish language translation for almost all ways and significant amount of address nodes.
+
+The advantages of this would be a more complete data set for Dublin that includes street and placename data in one of the official languages of ireland. This could be used to create an irish language version of OSM for Dublin and by extension all of ireland. There is also often more historical information contained in the irish language versions of placenames and streetnames in ireland, having this information available in a database could be of value to historians.
+
+A major challenge to this addition would be interacting and using the data on the loganim website. There is no clear way do download the information used to create the placename translator though it must work off a database of some kind. The first step would be to request a usable form of this database for combination with the existing node_tag data, directly emailing the creators of the website should yield results given this is public initiative to promote the irish language. Otherwise a freedom of information request could be submitted. There is also no guarantee that the format of the data recieved will be easy to use (like .csv) and parsing/data cleaning may be needed.
+Interacting directly with the translate function of the website is another option but that would be more technically challenging. This would also be potentially much slower than downloading a complete database locally as a new request would be needed for each update and internet connection time would be added to the time each addition.
 
 
 
