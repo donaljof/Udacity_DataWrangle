@@ -98,6 +98,8 @@ def city_converter(value):
 
 Using the csv file output from OSM_CSV_GENERATOR.py a SQLite database was created using the following schema:
 ```SQL
+PRAGMA encoding = "UTF-8"; 
+
 CREATE TABLE nodes(
 n\ "id" TEXT PRIMARY KEY,
 "lat" FLOAT,
@@ -156,6 +158,18 @@ GROUP BY uid;
 
 #### Database Queries and Questions
 
+##### Total Number of nodes and ways?
+
+```SQL
+SELECT COUNT(*) FROM nodes;
+```
+1109902
+
+```SQL
+SELECT COUNT(*) FROM ways;
+```
+194691
+
 ##### What are the top contributors to this map?
 
 ```SQL
@@ -176,6 +190,185 @@ LIMIT 10;
 |Autarch|4553|22617|1.73364413269119|
 |wigs|124925|20494|1.57091138768949|
 |Blazejos|15535|19143|1.46735418632478|
+
+##### What are the most common node tag keys?
+
+```SQL
+SELECT key, COUNT(*) AS num 
+FROM node_tags 
+GROUP BY key 
+ORDER BY num DESC LIMIT 10;
+```
+|Key|Num|
+|:--|:--|
+|created_by|11299|
+|highway|11081|
+|name|10507|
+|street|8143|
+|amenity|6186|
+|city|6010|
+|housenumber|5959|
+|natural|5763|
+|operator|3846|
+|barrier|3711|
+
+##### What are the most common amenity values?
+
+```SQL
+SELECT value, COUNT(*) AS num 
+FROM node_tags WHERE key = "amenity" 
+GROUP BY value 
+ORDER BY num DESC LIMIT 10;
+```
+|Amenity|Num|
+|:--|:--|
+|restaurant|528|
+|fast_food|520|
+|cafe|496|
+|post_box|469|
+|pub|464|
+|bench|455|
+|bicycle_parking|315|
+|pharmacy|253|
+|parking|230|
+|atm|209|
+
+##### Are there any pubs in Dublin with the same name? 
+```SQL
+SELECT pub_name, num
+FROM (
+SELECT pub_name, COUNT(pub_name) as num
+FROM (
+SELECT n0.id AS id, n1.value AS pub_name, n1.key AS k1
+FROM nodes n0, node_tags n1, 
+(SELECT "node id" AS id 
+FROM node_tags
+WHERE node_tags.key = "amenity" AND node_tags.value = "pub") n2
+WHERE n0.id = n2.id AND n1."node id" = n0.id)
+WHERE k1 = "name"
+GROUP BY pub_name)
+WHERE num > 1
+ORDER BY num DESC;
+```
+|Pub Name|Num|
+|:--|:--|
+|Sweeney's|3|
+|The Village Inn|3|
+|Brady's|2|
+|Downey's|2|
+|Hill 16|2|
+|Madigan's|2|
+|O'Donoghue's|2|
+|Ryan's|2|
+|The Laurels|2|
+|The Lombard|2|
+|The Waterside|2|
+|The Willows|2|
+
+##### What are the most common way tag keys?
+```SQL
+SELECT key, COUNT(*) AS num 
+FROM way_tags 
+GROUP BY key 
+ORDER BY num DESC LIMIT 10;
+```
+|Key|Num|
+|:--|:--|
+|building|101789|
+|street|76337|
+|housenumber|66420|
+|highway|59314|
+|levels|50122|
+|house|43109|
+|name|34676|
+|roof:shape|29595|
+|maxspeed|25484|
+|ga|12007|
+
+##### What are the most common highway way tags? 
+```SQL
+SELECT value, COUNT(*) AS num 
+FROM way_tags 
+WHERE key = "highway" 
+GROUP BY value 
+ORDER BY num DESC LIMIT 10;
+```
+|Highway|Num|
+|:--|:--|
+|residential|18201|
+|service|16154|
+|footway|9659|
+|secondary|3891|
+|unclassified|2825|
+|tertiary|2626|
+|path|1589|
+|track|1293|
+|steps|724|
+|pedestrian|506|
+
+##### How many ways contain cycle paths and how many ways are dedicated cyclepaths?
+
+```SQL
+SELECT COUNT(*)
+FROM way_tags w0,(SELECT * FROM way_tags
+WHERE key = "highway" AND value IN ("residential", "service", "footway", "secondary", "unclassified", "tertiary")) w1
+WHERE w0.way_id = w1.way_id AND w0.key = "cycleway";
+```
+986
+
+```SQL
+SELECT COUNT(*) 
+FROM way_tags, ways
+WHERE way_tags.key = "highway" AND way_tags.way_id = ways.id AND way_tags.value = "cycleway" ;
+```
+390
+
+```SQL
+SELECT COUNT(*)
+FROM way_tags
+WHERE key = "highway" AND value IN ("residential", "service", "footway", "secondary", "unclassified", "tertiary");
+```
+53356
+
+From this a rough number for the amount of cycle friendly roads/streets/paths in Dublin can be calculated: 1376/53356 or 2.58 % of total ways.
+
+
+#### Further Ideas and Discussion
+
+##### Crossing Dublin without passing a pub.
+
+A further extesnsion of the analysis into the pubs of Dublin would be to answer a classic riddle, put forward by James Joyce in the novel Ulysses - "Good puzzle would be cross Dublin without passing a pub."
+
+Using the sqlite database generated above a possible solution would be to use the 'addr:street' tag for nodes tagged as pubs and build a table of streets containing pubs that cannot be used to travel on.
+This approach fails pretty quickly as the are a multiude of pub nodes that are not tagged with a street address or not tagged correctly, as an example see two of my local establishments below both on Manor St., Stonybatter.
+
+```XML
+<node id="738165500" lat="53.3510474" lon="-6.2823722" version="5" timestamp="2015-12-02T13:04:32Z" changeset="35705672" uid="1909867" user="madmap77">
+    <tag k="addr:housenumber" v="19"/>
+    <tag k="addr:street" v="Stoneybatter"/>
+    <tag k="amenity" v="pub"/>
+    <tag k="name" v="Tommy O'Gara"/>
+  </node>
+  <node id="738165501" lat="53.3508058" lon="-6.2820166" version="4" timestamp="2014-06-30T15:09:57Z" changeset="23351241" uid="64381" user="Tincho">
+    <tag k="amenity" v="pub"/>
+    <tag k="name" v="The Glimmer Man"/>
+    <tag k="website" v="http://www.theglimmer.com/"/>
+```
+
+One solution would be to update the node tags for each pub with the street address during the osm xml parsing and csv generation though the deciding the correct street address would be difficult to complete programmaticaly. One possiblity would be to use the 'lat' and 'lon' node attributes to find the nearest way with a 'highway' tag.
+
+Alternatively, instead of finding the nearest way, the 'lat' / 'lon' values could be used to create an exclusion zone around a pub where the potential route cannot pass. This approach has some limitations due to the narrowness of Dublins medieval street layout and may result in streets being blocked that don't acually have pubs on them or the street (there is a pub in a laneway).
+Some googling of this problem found this to be the approach taken by Python developer Rory O Connor in solving this pretty comprehensively. (http://www.kindle-maps.com/blog/how-to-walk-across-dublin-without-passing-a-pub-full-publess-route-here.html)
+
+##### A measure of a city's cycle friendliness.
+
+The percentage cycle-able ways caluclated above is a crude first attempt at measuring the amount of cycle friendly routes in the city. As a measure of cycle routes it is deficient in several ways: 
+* It does not account for the lenght of the way in real terms.
+* Not all cycle friendly roads have 'cycleway' tags associated (observed from personal experience and a review of cycle routes in my local area on OSM).
+* Not all road with designated cycle paths are actually cycle friendly (this may be unique to Dublin!)
+* The metro area captured in the database used is much larger than central Dublin and includes large sections of the adjacent counties that would ot be considered either Dublin or urban areas.
+
+A refinment of this number would be useful to creating a metric by which to compare the cycle friendliness of different cities around the world. The first step would be to update the percentage cyclable ways to a percentage cyclable distances using the actual lenght of the ways tagged as having cycle paths.
 
 
 
