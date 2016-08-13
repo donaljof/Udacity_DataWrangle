@@ -193,10 +193,10 @@ osm_dublin.db = 215 MB</p>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h4 id="Data-Problems-Encountered">Data Problems Encountered<a class="anchor-link" href="#Data-Problems-Encountered">&#182;</a></h4><ul>
-<li><p>##### Irregular street abbreviations.
+<li><p>Irregular street abbreviations.
 Upon parsing and importing data set for first time, irregular street naming used such Rd. for Road found in dataset. Street naming converter function using regular expressions employed as part of shape_element function of OSM file parser and CSV generation.</p>
 </li>
-<li><p>##### Inconsistant use of addr:city tag.
+<li><p>Inconsistant use of addr:city tag.
 Analysis of output of addr:city tag shows inconsistant values. Some nodes/ways are tagged based on the area of Dublin in which they are located, such as "Cabinteely", some use the <a href="https://en.wikipedia.org/wiki/List_of_Dublin_postal_districts">Dublin City Postal codes</a> and some reference Dublin only. Unless the area in question is outside of the city of Dublin and a town/village in its own right this tag value has been updated to the correct city code or to simply "Dublin".</p>
 </li>
 </ul>
